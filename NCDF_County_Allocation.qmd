@@ -1,0 +1,82 @@
+---
+title: "NCDF Report for Kisii, Nyamira and Kajiado"
+author: "Everlyne N. Angwenyi"
+date: "2025-11-15"
+mainfont: Times New Roman
+format:
+    pdf:
+      documentclass: article
+      geometry:
+        - margin=1in
+      fontsize: 12pt
+      linestretch: 2
+      include-in-header:
+        text: |
+          \usepackage{etoolbox}
+          \AtBeginEnvironment{verbatim}{\linespread{1}\selectfont\small}
+          \AtBeginEnvironment{Highlighting}{\linespread{1}\selectfont\small}
+      include-before-body: 
+        text: |
+          \begin{center}
+          \text{SDS6/49662/2025}
+          
+          \vspace{0.5em}
+          
+          \text{Department of Mathematics}
+          
+          \text{Faculty of Science and Technology}
+          \end{center}
+          \vspace{2em}
+editor: visual
+bibliography: example_references.bib
+link-citations: true
+---
+
+\newpage
+\tableofcontents
+\newpage
+
+
+# Abstract
+This report presents an analysis of NG-CDF allocations in Kisii, Nyamira, and Kajiado counties between 2014 and 2026. Using R for data cleaning, transformation, and visualization, the study highlights county-level and constituency-level trends, compares performance, and evaluates growth rates. Interactive Shiny app outputs are integrated to complement static plots.
+
+# Introduction
+The NG-CDF is a key funding mechanism for grassroots development in Kenya. This assignment demonstrates practical skills in data wrangling, visualization, and interactive reporting by analyzing allocations in three counties of interest.
+
+## Data Preparation
+```{r}
+library(tidyverse)
+library(dplyr)
+
+# Load Dataset
+NCDF <- read.csv("NEW_NGCDF_DATA_28-JAN_2026.csv", sep = ',', header = TRUE)
+NCDF$County <- trimws(NCDF$County)
+
+# Filter for Counties of Interest
+NCDF_County <- NCDF %>%
+  filter(County %in% c("Kisii", "Kajiado", "Nyamira"), County != 0)
+
+# Pivot Years into Long Format
+NCDF_long <- NCDF_County %>%
+  pivot_longer(cols = starts_with("X"),
+               names_to = "Year",
+               values_to = "Allocation") %>%
+  mutate(Year = as.numeric(sub("X", "", Year))) %>%
+  filter(!is.na(Year))
+```
+#County-Level Trends
+```{r}
+County_Summary <- NCDF_long %>%
+  group_by(County, Year) %>%
+  summarise(Total_Allocation = sum(Allocation, na.rm = TRUE), .groups = "drop")
+
+ggplot(County_Summary, aes(x = Year, y = Total_Allocation, color = County)) +
+  geom_line(size = 1.2) +
+  geom_point() +
+  labs(title = "NCDF Allocations (2014–2026)",
+       x = "Year", y = "Total Allocation (KES)") +
+  theme_minimal()
+```
+\newpage
+
+# References
