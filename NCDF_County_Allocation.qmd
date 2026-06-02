@@ -1,7 +1,8 @@
 ---
 title: "NCDF Report for Kisii, Nyamira and Kajiado"
 author: "Everlyne N. Angwenyi"
-date: "2025-11-15"
+date: "2026-02-05"
+server: shiny
 mainfont: Times New Roman
 format:
     pdf:
@@ -33,28 +34,28 @@ link-citations: true
 ---
 
 \newpage
-\tableofcontents
-\newpage
-
-
-# Abstract
-This report presents an analysis of NG-CDF allocations in Kisii, Nyamira, and Kajiado counties between 2014 and 2026. Using R for data cleaning, transformation, and visualization, the study highlights county-level and constituency-level trends, compares performance, and evaluates growth rates. Interactive Shiny app outputs are integrated to complement static plots.
 
 # Introduction
-The NG-CDF is a key funding mechanism for grassroots development in Kenya. This assignment demonstrates practical skills in data wrangling, visualization, and interactive reporting by analyzing allocations in three counties of interest.
 
-## Data Preparation
+The NG-CDF is a key funding mechanism for grassroots development in Kenya. This project focuses on analyzing NCDF allocations in three counties Kisii, Nyamira, and Kajiado between 2014 and 2026. Using R and Shiny, a stakeholder‑friendly dashboard was developed to visualize allocation trends, compare constituency performance, and assess growth rates. While the dashboard provides transparency on financial flows, it does not yet capture the projects implemented with these funds, which is essential for accountability and impact assessment. **Methodology**
+
+Used R packages to upload data manipulate and do data analysis.For data visualization a shiny app that shows.
+
 ```{r}
+# Load packages}
 library(tidyverse)
-library(dplyr)
+library(scales)
 
+# Source your prep script
+source("NCDF_Data_Prep.R")
+```
 # Load Dataset
 NCDF <- read.csv("NEW_NGCDF_DATA_28-JAN_2026.csv", sep = ',', header = TRUE)
 NCDF$County <- trimws(NCDF$County)
 
 # Filter for Counties of Interest
 NCDF_County <- NCDF %>%
-  filter(County %in% c("Kisii", "Kajiado", "Nyamira"), County != 0)
+   filter(County %in% c("Kisii", "Kajiado", "Nyamira"), County != 0)
 
 # Pivot Years into Long Format
 NCDF_long <- NCDF_County %>%
@@ -69,7 +70,6 @@ NCDF_long <- NCDF_County %>%
 County_Summary <- NCDF_long %>%
   group_by(County, Year) %>%
   summarise(Total_Allocation = sum(Allocation, na.rm = TRUE), .groups = "drop")
-
 ggplot(County_Summary, aes(x = Year, y = Total_Allocation, color = County)) +
   geom_line(size = 1.2) +
   geom_point() +
@@ -77,6 +77,85 @@ ggplot(County_Summary, aes(x = Year, y = Total_Allocation, color = County)) +
        x = "Year", y = "Total Allocation (KES)") +
   theme_minimal()
 ```
-\newpage
+
+# Results and Analysis
+
+- **County/Constituency Comparisons**: It shows tremendous increase of funds across the years
+
+```{r}
+  df <- County_Summary %>%
+    filter(Year >= 2014, Year <= 2026) %>%
+    group_by(County) %>%
+    summarise(Total_Allocation = sum(Total_Allocation, na.rm = TRUE))
+
+  ggplot(df, aes(x = reorder(County, -Total_Allocation),
+                 y = Total_Allocation/1e6,
+                 fill = County)) +
+    geom_bar(stat = "identity") +
+    geom_text(aes(label = paste0(round(Total_Allocation/1e6,1)," M")),
+              vjust = -0.5, size = 3) +
+    labs(title = "Comparison of NCDF Allocations (2014–2026)",
+         y = "Allocation (Million KES)") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1),
+          legend.position = "none")
+```
+Top Constituencies per year;
+```{r}
+library(DT)
+
+top_constituencies <- NCDF_long %>%
+  filter(County %in% c("Kisii", "Nyamira", "Kajiado"),
+         Year >= 2014, Year <= 2026) %>%
+  group_by(County, Year) %>%
+  slice_max(order_by = Allocation, n = 1, with_ties = FALSE) %>%
+  select(Year, County, Constituency, Allocation)
+
+datatable(top_constituencies,
+          options = list(pageLength = 10, autoWidth = TRUE),
+          caption = "Top Constituency Allocations per County per Year (2014–2026)")
+
+```
+***Current Findings***
+
+Allocation Trends: Kisii and Nyamira show steady increases in allocations, while Kajiado exhibits more variability.
+
+Constituency Comparisons: Certain constituencies consistently receive higher allocations, suggesting prioritization or larger project scopes.
+
+Growth Rates: Growth rates vary widely, with some constituencies showing strong upward trends while others remain stagnant.
+
+Top Allocations: Each year, one constituency emerges as the top recipient, but this does not necessarily reflect project outcomes.
+
+**Identified Gap** The dashboard currently reports financial allocations only. One cannot assess:
+
+What projects were funded (schools, health centers, water points, roads).
+
+Whether projects were completed, ongoing, or stalled.
+
+The quality, sustainability, and community impact of outputs.
+
+This limits the dashboard’s usefulness for accountability and citizen oversight.
+
+**Recommendations**
+
+ 1. Integrate Project-Level Data Extend the dataset to include project descriptions, categories, start/end dates, and completion status.Link allocations to specific outputs (e.g., “KES 20M → 3 classrooms built in Kisii South”).
+
+2.  Web Scraping for Project Information Since NCDF Board websites, county portals, and constituency development fund pages often publish project lists, web scraping can be used to collect this information. Use tools like rvest in R, or Python’s BeautifulSoup and Scrapy.
+
+    Target sources: NCDF Board website, county government portals, parliamentary reports, and local news sites.
+
+3.  Dashboard Enhancements add a Projects tab showing allocations linked to actual outputs. Use interactive maps to show project locations. Include completion status indicators (e.g., green = completed, red = stalled).
+
+4.  Accountability Metrics Compare planned vs. actual projects. Track unit costs (e.g., cost per classroom).Highlight delays or discrepancies between allocations and outcomes.
+
+5.  Stakeholder Engagement Provide downloadable reports for community monitoring. Enable feedback loops where citizens can validate project completion.
+
+**Conclusion**
+
+The NCDF dashboard for Kisii, Nyamira, and Kajiado counties is a strong foundation for financial transparency. However, to achieve development accountability, it must evolve to include project‑level data. By integrating web‑scraped project information, the dashboard can compare allocations with actual outputs, highlight discrepancies, and empower stakeholders to monitor progress. This transformation will ensure that NCDF allocations are not only tracked as numbers but also evaluated in terms of tangible impact on communities.
 
 # References
+
+National Government Constituencies Development Fund Board. (n.d.). *National Government Constituencies Development Fund*. [https://ngcdf.go.ke/](https://ngcdf.go.ke/?utm_source=chatgpt.com)
+
+Posit Software, PBC. (n.d.). *shinyapps.io*. <https://www.shinyapps.io/>
