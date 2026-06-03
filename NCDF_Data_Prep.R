@@ -17,9 +17,11 @@ NCDF$County <- trimws(NCDF$County);
 unique(NCDF$County);
 
 # Filter for 3 Counties of Interest
-
-NCDF_County <- NCDF %>%
-  filter(County %in% c("Kisii", "Kajiado", "Nyamira"), County != 0);
+NCDF_County <- dplyr::filter(
+  NCDF,
+  County %in% c("Kisii", "Kajiado", "Nyamira"),
+  County != 0
+)
 
 # Preview first few rows
 head(NCDF_County);
